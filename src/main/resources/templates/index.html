@@ -3,11 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
 
     <title>Dev Archive</title>
 
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/style.css}">
 </head>
 
 <body>
@@ -20,7 +22,6 @@
 <main>
 
     <div class="search-box">
-
         <input
                 type="text"
                 placeholder="검색..."
@@ -36,7 +37,6 @@
                 onclick="openCategoryForm()">
             + 카테고리
         </button>
-
     </div>
 
     <form
@@ -62,12 +62,11 @@
                 onclick="closeCategoryForm()">
             취소
         </button>
-
     </form>
 
     <section class="card-container">
 
-        <div
+        <article
                 class="card"
                 th:each="category : ${categories}">
 
@@ -83,51 +82,418 @@
                     </span>
                 </h2>
 
-                <form
-                        th:if="${!category.defaultCategory}"
-                        th:action="@{/categories/{id}/delete(id=${category.id})}"
-                        method="post"
-                        onsubmit="return confirm('카테고리를 삭제할까요?');">
+                <div class="card-title-buttons">
 
                     <button
-                            class="category-delete-button"
-                            type="submit"
-                            aria-label="카테고리 삭제">
-                        ×
+                            class="archive-add-button"
+                            type="button"
+                            th:data-category-id="${category.id}"
+                            th:data-category-name="${category.name}"
+                            onclick="openArchiveCreateModal(this)"
+                            aria-label="자료 추가">
+                        +
                     </button>
 
-                </form>
+                    <form
+                            th:if="${!category.defaultCategory}"
+                            th:action="@{/categories/{id}/delete(id=${category.id})}"
+                            method="post"
+                            onsubmit="return confirm(
+                                '카테고리를 삭제할까요?\n저장된 자료는 기타로 이동합니다.'
+                            );">
+
+                        <button
+                                class="category-delete-button"
+                                type="submit"
+                                aria-label="카테고리 삭제">
+                            ×
+                        </button>
+
+                    </form>
+
+                </div>
 
             </div>
 
-            <ul>
-                <li>아직 저장된 자료가 없습니다.</li>
-            </ul>
+            <div class="archive-list">
+
+                <div
+                        class="archive-item"
+                        th:each="archive :
+                            ${archivesByCategory[category.id]}"
+                        th:data-archive-id="${archive.id}">
+
+                    <div class="archive-info">
+
+                        <a
+                                class="archive-title"
+                                th:href="${archive.url}"
+                                th:text="${archive.title}"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                            자료 제목
+                        </a>
+
+                        <p
+                                class="archive-memo"
+                                th:if="${archive.memo != null
+                                    and !archive.memo.isBlank()}"
+                                th:text="${archive.memo}">
+                            메모
+                        </p>
+
+                    </div>
+
+                    <div class="archive-actions">
+
+                        <a
+                                class="archive-action-button"
+                                th:href="${archive.url}"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                            열기
+                        </a>
+
+                        <button
+                                class="archive-action-button"
+                                type="button"
+                                th:data-archive-id="${archive.id}"
+                                th:data-category-id="${category.id}"
+                                th:data-category-name="${category.name}"
+                                th:data-title="${archive.title}"
+                                th:data-url="${archive.url}"
+                                th:data-memo="${archive.memo}"
+                                onclick="openArchiveEditModal(this)">
+                            수정
+                        </button>
+
+                        <form
+                                th:action="@{/archives/{id}/delete(id=${archive.id})}"
+                                method="post"
+                                onsubmit="return confirm(
+                                    '이 자료를 삭제할까요?'
+                                );">
+
+                            <button
+                                    class="archive-action-button delete"
+                                    type="submit">
+                                삭제
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+                <p
+                        class="empty-archive-message"
+                        th:if="${archivesByCategory[category.id] == null
+                            or archivesByCategory[category.id].isEmpty()}">
+                    아직 저장된 자료가 없습니다.
+                </p>
+
+            </div>
 
             <div class="page">
-                ◀ 1 / 1 ▶
+
+                <button
+                        class="page-button previous"
+                        type="button"
+                        onclick="moveCardPage(this, -1)">
+                    ◀
+                </button>
+
+                <span class="page-indicator">
+                    1 / 1
+                </span>
+
+                <button
+                        class="page-button next"
+                        type="button"
+                        onclick="moveCardPage(this, 1)">
+                    ▶
+                </button>
+
             </div>
 
-        </div>
+        </article>
 
     </section>
 
 </main>
 
+<div
+        id="archive-modal"
+        class="modal-overlay"
+        onclick="closeModalOnOutside(event)">
+
+    <div class="modal">
+
+        <div class="modal-header">
+            <h2 id="archive-modal-title">
+                자료 추가
+            </h2>
+
+            <button
+                    class="modal-close-button"
+                    type="button"
+                    onclick="closeArchiveModal()">
+                ×
+            </button>
+        </div>
+
+        <p
+                id="selected-category-name"
+                class="selected-category">
+        </p>
+
+        <form
+                id="archive-form"
+                method="post">
+
+            <input
+                    id="archive-category-id"
+                    type="hidden"
+                    name="categoryId">
+
+            <label for="archive-title">
+                제목
+            </label>
+
+            <input
+                    id="archive-title"
+                    type="text"
+                    name="title"
+                    maxlength="100"
+                    placeholder="자료 제목"
+                    required>
+
+            <label for="archive-url">
+                URL
+            </label>
+
+            <input
+                    id="archive-url"
+                    type="url"
+                    name="url"
+                    maxlength="1000"
+                    placeholder="https://..."
+                    required>
+
+            <label for="archive-memo">
+                메모
+            </label>
+
+            <textarea
+                    id="archive-memo"
+                    name="memo"
+                    rows="7"
+                    placeholder="다시 볼 때 필요한 내용을 적어 두세요."></textarea>
+
+            <div class="modal-buttons">
+
+                <button
+                        class="modal-save-button"
+                        type="submit">
+                    저장
+                </button>
+
+                <button
+                        class="modal-cancel-button"
+                        type="button"
+                        onclick="closeArchiveModal()">
+                    취소
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 <script>
-    const categoryForm = document.getElementById("category-form");
+    const ITEMS_PER_PAGE = 4;
+
+    const categoryForm =
+        document.getElementById("category-form");
+
+    const archiveModal =
+        document.getElementById("archive-modal");
+
+    const archiveForm =
+        document.getElementById("archive-form");
+
+    const archiveModalTitle =
+        document.getElementById("archive-modal-title");
+
+    const selectedCategoryName =
+        document.getElementById("selected-category-name");
+
+    const categoryIdInput =
+        document.getElementById("archive-category-id");
+
+    const titleInput =
+        document.getElementById("archive-title");
+
+    const urlInput =
+        document.getElementById("archive-url");
+
+    const memoInput =
+        document.getElementById("archive-memo");
 
     function openCategoryForm() {
         categoryForm.classList.add("show");
-
-        const input = categoryForm.querySelector("input");
-        input.focus();
+        categoryForm.querySelector("input").focus();
     }
 
     function closeCategoryForm() {
         categoryForm.classList.remove("show");
         categoryForm.reset();
     }
+
+    function openArchiveCreateModal(button) {
+        archiveModalTitle.textContent = "자료 추가";
+
+        archiveForm.action = "/archives";
+        archiveForm.reset();
+
+        categoryIdInput.value =
+            button.dataset.categoryId;
+
+        selectedCategoryName.textContent =
+            button.dataset.categoryName + " 카테고리";
+
+        archiveModal.classList.add("show");
+        titleInput.focus();
+    }
+
+    function openArchiveEditModal(button) {
+        archiveModalTitle.textContent = "자료 수정";
+
+        archiveForm.action =
+            "/archives/" +
+            button.dataset.archiveId +
+            "/update";
+
+        categoryIdInput.value =
+            button.dataset.categoryId;
+
+        titleInput.value =
+            button.dataset.title ?? "";
+
+        urlInput.value =
+            button.dataset.url ?? "";
+
+        memoInput.value =
+            button.dataset.memo ?? "";
+
+        selectedCategoryName.textContent =
+            button.dataset.categoryName + " 카테고리";
+
+        archiveModal.classList.add("show");
+        titleInput.focus();
+    }
+
+    function closeArchiveModal() {
+        archiveModal.classList.remove("show");
+        archiveForm.reset();
+    }
+
+    function closeModalOnOutside(event) {
+        if (event.target === archiveModal) {
+            closeArchiveModal();
+        }
+    }
+
+    function initializeCardPagination() {
+        document.querySelectorAll(".card")
+            .forEach(card => {
+                card.dataset.currentPage = "1";
+                renderCardPage(card);
+            });
+    }
+
+    function moveCardPage(button, direction) {
+        const card = button.closest(".card");
+
+        const items =
+            card.querySelectorAll(".archive-item");
+
+        const totalPages = Math.max(
+            1,
+            Math.ceil(items.length / ITEMS_PER_PAGE)
+        );
+
+        let currentPage =
+            Number(card.dataset.currentPage || 1);
+
+        currentPage += direction;
+
+        if (currentPage < 1) {
+            currentPage = 1;
+        }
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        card.dataset.currentPage =
+            String(currentPage);
+
+        renderCardPage(card);
+    }
+
+    function renderCardPage(card) {
+        const items =
+            Array.from(
+                card.querySelectorAll(".archive-item")
+            );
+
+        const totalPages = Math.max(
+            1,
+            Math.ceil(items.length / ITEMS_PER_PAGE)
+        );
+
+        let currentPage =
+            Number(card.dataset.currentPage || 1);
+
+        if (currentPage > totalPages) {
+            currentPage = totalPages;
+        }
+
+        const start =
+            (currentPage - 1) * ITEMS_PER_PAGE;
+
+        const end =
+            start + ITEMS_PER_PAGE;
+
+        items.forEach((item, index) => {
+            item.style.display =
+                index >= start && index < end
+                    ? "flex"
+                    : "none";
+        });
+
+        card.querySelector(".page-indicator")
+            .textContent =
+            currentPage + " / " + totalPages;
+
+        card.querySelector(".previous")
+            .disabled =
+            currentPage === 1;
+
+        card.querySelector(".next")
+            .disabled =
+            currentPage === totalPages;
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializeCardPagination
+    );
 </script>
 
 </body>

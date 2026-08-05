@@ -179,6 +179,269 @@ header p {
     color: #333;
 }
 
+.card {
+    min-height: 390px;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-title-buttons form,
+.archive-actions form {
+    margin: 0;
+}
+
+.archive-add-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.archive-add-button:hover {
+    background: #22c55e;
+    color: white;
+}
+
+.archive-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.archive-item {
+    min-height: 58px;
+    padding: 11px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-radius: 10px;
+    background: #f5f5f5;
+}
+
+.archive-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.archive-title {
+    display: block;
+    overflow: hidden;
+    color: #252525;
+    font-weight: 700;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.archive-title:hover {
+    color: #4f46e5;
+}
+
+.archive-memo {
+    margin-top: 4px;
+    overflow: hidden;
+    color: #888;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.archive-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.archive-action-button {
+    padding: 6px 8px;
+    border: none;
+    border-radius: 7px;
+    background: white;
+    color: #555;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.archive-action-button:hover {
+    background: #e8e7ff;
+    color: #4338ca;
+}
+
+.archive-action-button.delete:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.empty-archive-message {
+    margin: auto;
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+.page {
+    margin-top: auto;
+    padding-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+}
+
+.page-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #eeeeee;
+    color: #555;
+    cursor: pointer;
+}
+
+.page-button:hover:not(:disabled) {
+    background: #4f46e5;
+    color: white;
+}
+
+.page-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.page-indicator {
+    min-width: 45px;
+    text-align: center;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal {
+    width: min(520px, 100%);
+    padding: 26px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-close-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #777;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-close-button:hover {
+    background: #f1f1f1;
+}
+
+.selected-category {
+    margin: 6px 0 22px;
+    color: #777;
+}
+
+#archive-form {
+    display: flex;
+    flex-direction: column;
+}
+
+#archive-form label {
+    margin: 0 0 7px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+#archive-form input,
+#archive-form textarea {
+    width: 100%;
+    margin-bottom: 18px;
+    padding: 12px;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+}
+
+#archive-form input:focus,
+#archive-form textarea:focus {
+    border-color: #4f46e5;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-save-button,
+.modal-cancel-button {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.modal-save-button {
+    background: #4f46e5;
+    color: white;
+}
+
+.modal-cancel-button {
+    background: #eeeeee;
+    color: #444;
+}
+
+@media (max-width: 620px) {
+    .archive-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .archive-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
 @media (max-width: 900px) {
     .card-container {
         grid-template-columns: 1fr;
