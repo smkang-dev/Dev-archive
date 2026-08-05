@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Dev Archive</title>
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>📚 Dev Archive</h1>
+
+    <p>나만의 개발 자료 저장소</p>
+
+</header>
+
+<main>
+
+    <div class="search-box">
+
+        <input
+                type="text"
+                placeholder="검색..."
+        >
+
+        <button type="button">
+            검색
+        </button>
+
+        <button
+                class="category-add-button"
+                type="button">
+            + 카테고리
+        </button>
+
+    </div>
+
+    <section class="card-container">
+
+        <!-- 기타 -->
+
+        <div class="card">
+
+            <div class="card-title-row">
+
+                <h2>📦 기타</h2>
+
+            </div>
+
+            <ul>
+
+                <li>아직 저장된 자료가 없습니다.</li>
+
+            </ul>
+
+            <div class="page">
+
+                ◀
+                1 / 1
+                ▶
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+</body>
+
+</html>
