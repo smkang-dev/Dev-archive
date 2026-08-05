@@ -2,24 +2,19 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Dev Archive</title>
 
     <link rel="stylesheet" th:href="@{/css/style.css}">
-
 </head>
 
 <body>
 
 <header>
-
     <h1>📚 Dev Archive</h1>
-
     <p>나만의 개발 자료 저장소</p>
-
 </header>
 
 <main>
@@ -37,36 +32,80 @@
 
         <button
                 class="category-add-button"
-                type="button">
+                type="button"
+                onclick="openCategoryForm()">
             + 카테고리
         </button>
 
     </div>
 
+    <form
+            id="category-form"
+            class="category-form"
+            th:action="@{/categories}"
+            method="post">
+
+        <input
+                type="text"
+                name="name"
+                maxlength="30"
+                placeholder="카테고리 이름"
+                required>
+
+        <button type="submit">
+            추가
+        </button>
+
+        <button
+                type="button"
+                class="cancel-button"
+                onclick="closeCategoryForm()">
+            취소
+        </button>
+
+    </form>
+
     <section class="card-container">
 
-        <!-- 기타 -->
-
-        <div class="card">
+        <div
+                class="card"
+                th:each="category : ${categories}">
 
             <div class="card-title-row">
 
-                <h2>📦 기타</h2>
+                <h2>
+                    <span th:text="${category.defaultCategory ? '📦' : '📁'}">
+                        📁
+                    </span>
+
+                    <span th:text="${category.name}">
+                        카테고리
+                    </span>
+                </h2>
+
+                <form
+                        th:if="${!category.defaultCategory}"
+                        th:action="@{/categories/{id}/delete(id=${category.id})}"
+                        method="post"
+                        onsubmit="return confirm('카테고리를 삭제할까요?');">
+
+                    <button
+                            class="category-delete-button"
+                            type="submit"
+                            aria-label="카테고리 삭제">
+                        ×
+                    </button>
+
+                </form>
 
             </div>
 
             <ul>
-
                 <li>아직 저장된 자료가 없습니다.</li>
-
             </ul>
 
             <div class="page">
-
-                ◀
-                1 / 1
-                ▶
-
+                ◀ 1 / 1 ▶
             </div>
 
         </div>
@@ -74,6 +113,22 @@
     </section>
 
 </main>
+
+<script>
+    const categoryForm = document.getElementById("category-form");
+
+    function openCategoryForm() {
+        categoryForm.classList.add("show");
+
+        const input = categoryForm.querySelector("input");
+        input.focus();
+    }
+
+    function closeCategoryForm() {
+        categoryForm.classList.remove("show");
+        categoryForm.reset();
+    }
+</script>
 
 </body>
 
