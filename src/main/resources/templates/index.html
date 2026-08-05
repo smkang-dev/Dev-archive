@@ -21,15 +21,32 @@
 
 <main>
 
-    <div class="search-box">
-        <input
-                type="text"
-                placeholder="검색..."
-        >
+    <div class="search-row">
 
-        <button type="button">
-            검색
-        </button>
+        <form
+                class="search-box"
+                th:action="@{/}"
+                method="get">
+
+            <input
+                    type="search"
+                    name="keyword"
+                    th:value="${keyword}"
+                    placeholder="제목, URL, 메모 검색..."
+                    autocomplete="off">
+
+            <button type="submit">
+                검색
+            </button>
+
+            <a
+                    class="search-reset-button"
+                    th:if="${searching}"
+                    th:href="@{/}">
+                초기화
+            </a>
+
+        </form>
 
         <button
                 class="category-add-button"
@@ -37,6 +54,21 @@
                 onclick="openCategoryForm()">
             + 카테고리
         </button>
+
+    </div>
+
+    <div
+            class="search-summary"
+            th:if="${searching}">
+
+        <strong th:text="|'${keyword}' 검색 결과|">
+            검색 결과
+        </strong>
+
+        <span th:text="|${searchResultCount}개|">
+        0개
+    </span>
+
     </div>
 
     <form
@@ -68,7 +100,12 @@
 
         <article
                 class="card"
-                th:each="category : ${categories}">
+                th:each="category : ${categories}"
+                th:if="${!searching
+            or (
+                archivesByCategory[category.id] != null
+                and !archivesByCategory[category.id].isEmpty()
+            )}">
 
             <div class="card-title-row">
 
@@ -220,6 +257,22 @@
         </article>
 
     </section>
+
+    <div
+            class="no-search-result"
+            th:if="${searching and searchResultCount == 0}">
+
+        <div class="no-search-result-icon">
+            🔎
+        </div>
+
+        <h2>검색 결과가 없습니다</h2>
+
+        <p>
+            다른 제목이나 URL, 메모 내용으로 검색해 보세요.
+        </p>
+
+    </div>
 
 </main>
 

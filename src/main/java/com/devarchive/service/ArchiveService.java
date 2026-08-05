@@ -28,6 +28,21 @@ public class ArchiveService {
         return archiveRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    public List<Archive> search(String keyword) {
+        String value = keyword == null ? "" : keyword.trim();
+
+        if (value.isBlank()) {
+            return findAll();
+        }
+
+        return archiveRepository
+                .findByTitleContainingIgnoreCaseOrUrlContainingIgnoreCaseOrMemoContainingIgnoreCaseOrderByCreatedAtDesc(
+                        value,
+                        value,
+                        value
+                );
+    }
+
     @Transactional
     public void create(
             Long categoryId,

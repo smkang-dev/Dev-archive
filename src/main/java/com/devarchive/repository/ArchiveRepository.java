@@ -10,4 +10,11 @@ public interface ArchiveRepository extends JpaRepository<Archive, Long> {
     List<Archive> findAllByOrderByCreatedAtDesc();
 
     List<Archive> findByCategoryId(Long categoryId);
+
+    List<Archive>
+    findByTitleContainingIgnoreCaseOrUrlContainingIgnoreCaseOrMemoContainingIgnoreCaseOrderByCreatedAtDesc(
+            String title,
+            String url,
+            String memo
+    );
 }

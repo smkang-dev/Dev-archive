@@ -26,8 +26,11 @@ public class HomeController {
     }
 
     @GetMapping("/")
-    public String home(Model model) {
-        List<Archive> archives = archiveService.findAll();
+    public String home(
+            @RequestParam(required = false) String keyword,
+            Model model
+    ) {
+        List<Archive> archives = archiveService.search(keyword);
 
         Map<Long, List<Archive>> archivesByCategory =
                 archives.stream()
@@ -38,6 +41,9 @@ public class HomeController {
                                 )
                         );
 
+        boolean searching =
+                keyword != null && !keyword.trim().isBlank();
+
         model.addAttribute(
                 "categories",
                 categoryService.findAll()
@@ -46,6 +52,21 @@ public class HomeController {
         model.addAttribute(
                 "archivesByCategory",
                 archivesByCategory
+        );
+
+        model.addAttribute(
+                "keyword",
+                keyword == null ? "" : keyword.trim()
+        );
+
+        model.addAttribute(
+                "searching",
+                searching
+        );
+
+        model.addAttribute(
+                "searchResultCount",
+                archives.size()
         );
 
         return "index";
