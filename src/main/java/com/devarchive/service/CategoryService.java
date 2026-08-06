@@ -29,22 +29,54 @@ public class CategoryService {
 
     @PostConstruct
     @Transactional
-    public void createDefaultCategory() {
+    public void initializeData() {
+        createDefaultCategory();
+        initializeCategoryOrders();
+        initializeArchiveOrders();
+    }
+
+    private void createDefaultCategory() {
         if (!categoryRepository.existsByName(DEFAULT_CATEGORY_NAME)) {
             categoryRepository.save(
-                    new Category(DEFAULT_CATEGORY_NAME, true)
+                    new Category(
+                            DEFAULT_CATEGORY_NAME,
+                            true,
+                            0
+                    )
             );
         }
     }
 
+    private void initializeCategoryOrders() {
+        List<Category> categories =
+                categoryRepository.findAllInDisplayOrder();
+
+        int order = 0;
+
+        for (Category category : categories) {
+            if (!category.isDefaultCategory()) {
+                category.changeSortOrder(order++);
+            }
+        }
+    }
+
+    private void initializeArchiveOrders() {
+        List<Category> categories =
+                categoryRepository.findAllInDisplayOrder();
+
+        for (Category category : categories) {
+            normalizeArchiveOrders(category.getId());
+        }
+    }
+
     public List<Category> findAll() {
-        return categoryRepository
-                .findAllByOrderByDefaultCategoryAscIdAsc();
+        return categoryRepository.findAllInDisplayOrder();
     }
 
     @Transactional
     public void create(String name) {
-        String trimmedName = name == null ? "" : name.trim();
+        String trimmedName =
+                name == null ? "" : name.trim();
 
         if (trimmedName.isBlank()) {
             throw new IllegalArgumentException(
@@ -64,14 +96,22 @@ public class CategoryService {
             );
         }
 
+        int nextOrder =
+                categoryRepository.findMaxUserSortOrder() + 1;
+
         categoryRepository.save(
-                new Category(trimmedName, false)
+                new Category(
+                        trimmedName,
+                        false,
+                        nextOrder
+                )
         );
     }
 
     @Transactional
     public void delete(Long categoryId) {
-        Category category = categoryRepository.findById(categoryId)
+        Category category = categoryRepository
+                .findById(categoryId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "존재하지 않는 카테고리입니다."
@@ -93,12 +133,44 @@ public class CategoryService {
                 );
 
         List<Archive> archives =
-                archiveRepository.findByCategoryId(categoryId);
+                archiveRepository
+                        .findByCategoryIdInDisplayOrder(categoryId);
+
+        int nextOrder =
+                archiveRepository
+                        .findMaxSortOrderByCategoryId(
+                                defaultCategory.getId()
+                        ) + 1;
 
         for (Archive archive : archives) {
             archive.moveTo(defaultCategory);
+            archive.changeSortOrder(nextOrder++);
         }
 
         categoryRepository.delete(category);
+        normalizeCategoryOrders();
+    }
+
+    private void normalizeCategoryOrders() {
+        List<Category> categories =
+                categoryRepository.findAllInDisplayOrder();
+
+        int order = 0;
+
+        for (Category category : categories) {
+            if (!category.isDefaultCategory()) {
+                category.changeSortOrder(order++);
+            }
+        }
+    }
+
+    private void normalizeArchiveOrders(Long categoryId) {
+        List<Archive> archives =
+                archiveRepository
+                        .findByCategoryIdInDisplayOrder(categoryId);
+
+        for (int i = 0; i < archives.size(); i++) {
+            archives.get(i).changeSortOrder(i);
+        }
     }
 }

@@ -27,6 +27,9 @@ public class Archive {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "sort_order")
+    private Integer sortOrder;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
@@ -38,12 +41,14 @@ public class Archive {
             String title,
             String url,
             String memo,
-            Category category
+            Category category,
+            Integer sortOrder
     ) {
         this.title = title;
         this.url = url;
         this.memo = memo;
         this.category = category;
+        this.sortOrder = sortOrder;
     }
 
     @PrePersist
@@ -74,6 +79,10 @@ public class Archive {
         this.category = category;
     }
 
+    public void changeSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
     public Long getId() {
         return id;
     }
@@ -96,6 +105,10 @@ public class Archive {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
     }
 
     public Category getCategory() {

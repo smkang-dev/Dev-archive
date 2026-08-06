@@ -530,3 +530,70 @@ header p {
         font-size: 36px;
     }
 }
+
+.category-title {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drag-handle {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    font-size: 18px;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+}
+
+.drag-handle:hover {
+    color: #4f46e5;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.category-drag-handle {
+    padding: 4px 2px;
+}
+
+.archive-drag-handle {
+    padding: 8px 3px;
+}
+
+.card.dragging,
+.archive-item.dragging {
+    opacity: 0.45;
+    outline: 2px dashed #4f46e5;
+}
+
+.archive-list {
+    min-height: 90px;
+}
+
+.archive-drag-mode .page {
+    visibility: hidden;
+}
+
+.archive-drag-mode .archive-list {
+    min-height: 130px;
+    padding-bottom: 15px;
+    border: 2px dashed transparent;
+}
+
+.archive-drag-mode .archive-list:hover {
+    border-color: #c7c5ff;
+    border-radius: 12px;
+}
+
+.archive-drag-mode .empty-archive-message {
+    pointer-events: none;
+}
+
+.drag-disabled .drag-handle {
+    display: none;
+}

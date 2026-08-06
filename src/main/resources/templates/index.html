@@ -3,16 +3,19 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1">
+
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1">
 
     <title>Dev Archive</title>
 
-    <link rel="stylesheet"
-          th:href="@{/css/style.css}">
+    <link
+            rel="stylesheet"
+            th:href="@{/css/style.css}">
 </head>
 
-<body>
+<body th:data-searching="${searching}">
 
 <header>
     <h1>📚 Dev Archive</h1>
@@ -20,6 +23,8 @@
 </header>
 
 <main>
+
+    <!-- 검색 및 카테고리 추가 -->
 
     <div class="search-row">
 
@@ -57,6 +62,8 @@
 
     </div>
 
+    <!-- 검색 결과 정보 -->
+
     <div
             class="search-summary"
             th:if="${searching}">
@@ -66,10 +73,12 @@
         </strong>
 
         <span th:text="|${searchResultCount}개|">
-        0개
-    </span>
+            0개
+        </span>
 
     </div>
+
+    <!-- 카테고리 추가 폼 -->
 
     <form
             id="category-form"
@@ -94,7 +103,10 @@
                 onclick="closeCategoryForm()">
             취소
         </button>
+
     </form>
+
+    <!-- 카테고리 카드 목록 -->
 
     <section class="card-container">
 
@@ -102,21 +114,38 @@
                 class="card"
                 th:each="category : ${categories}"
                 th:if="${!searching
-            or (
-                archivesByCategory[category.id] != null
-                and !archivesByCategory[category.id].isEmpty()
-            )}">
+                    or (
+                        archivesByCategory[category.id] != null
+                        and !archivesByCategory[category.id].isEmpty()
+                    )}"
+                th:data-category-id="${category.id}"
+                th:data-default-category="${category.defaultCategory}">
+
+            <!-- 카드 상단 -->
 
             <div class="card-title-row">
 
-                <h2>
-                    <span th:text="${category.defaultCategory ? '📦' : '📁'}">
+                <h2 class="category-title">
+
+                    <button
+                            th:if="${!category.defaultCategory}"
+                            class="drag-handle category-drag-handle"
+                            type="button"
+                            th:attr="draggable=${!searching}"
+                            title="카테고리 순서 변경"
+                            aria-label="카테고리 순서 변경">
+                        ⋮⋮
+                    </button>
+
+                    <span
+                            th:text="${category.defaultCategory ? '📦' : '📁'}">
                         📁
                     </span>
 
                     <span th:text="${category.name}">
                         카테고리
                     </span>
+
                 </h2>
 
                 <div class="card-title-buttons">
@@ -152,13 +181,25 @@
 
             </div>
 
-            <div class="archive-list">
+            <!-- 자료 목록 -->
+
+            <div
+                    class="archive-list"
+                    th:data-category-id="${category.id}">
 
                 <div
                         class="archive-item"
-                        th:each="archive :
-                            ${archivesByCategory[category.id]}"
+                        th:each="archive : ${archivesByCategory[category.id]}"
                         th:data-archive-id="${archive.id}">
+
+                    <button
+                            class="drag-handle archive-drag-handle"
+                            type="button"
+                            th:attr="draggable=${!searching}"
+                            title="자료 순서 변경"
+                            aria-label="자료 순서 변경">
+                        ⋮⋮
+                    </button>
 
                     <div class="archive-info">
 
@@ -232,6 +273,8 @@
 
             </div>
 
+            <!-- 카드 내부 페이지 이동 -->
+
             <div class="page">
 
                 <button
@@ -258,6 +301,8 @@
 
     </section>
 
+    <!-- 검색 결과 없음 -->
+
     <div
             class="no-search-result"
             th:if="${searching and searchResultCount == 0}">
@@ -276,6 +321,8 @@
 
 </main>
 
+<!-- 자료 추가 및 수정 모달 -->
+
 <div
         id="archive-modal"
         class="modal-overlay"
@@ -284,6 +331,7 @@
     <div class="modal">
 
         <div class="modal-header">
+
             <h2 id="archive-modal-title">
                 자료 추가
             </h2>
@@ -294,6 +342,7 @@
                     onclick="closeArchiveModal()">
                 ×
             </button>
+
         </div>
 
         <p
@@ -397,6 +446,15 @@
     const memoInput =
         document.getElementById("archive-memo");
 
+    const cardContainer =
+        document.querySelector(".card-container");
+
+    const searching =
+        document.body.dataset.searching === "true";
+
+    let draggedCard = null;
+    let draggedArchive = null;
+
     function openCategoryForm() {
         categoryForm.classList.add("show");
         categoryForm.querySelector("input").focus();
@@ -427,9 +485,9 @@
         archiveModalTitle.textContent = "자료 수정";
 
         archiveForm.action =
-            "/archives/" +
-            button.dataset.archiveId +
-            "/update";
+            "/archives/"
+            + button.dataset.archiveId
+            + "/update";
 
         categoryIdInput.value =
             button.dataset.categoryId;
@@ -470,7 +528,8 @@
     }
 
     function moveCardPage(button, direction) {
-        const card = button.closest(".card");
+        const card =
+            button.closest(".card");
 
         const items =
             card.querySelectorAll(".archive-item");
@@ -485,13 +544,10 @@
 
         currentPage += direction;
 
-        if (currentPage < 1) {
-            currentPage = 1;
-        }
-
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
+        currentPage = Math.max(
+            1,
+            Math.min(currentPage, totalPages)
+        );
 
         card.dataset.currentPage =
             String(currentPage);
@@ -513,9 +569,13 @@
         let currentPage =
             Number(card.dataset.currentPage || 1);
 
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
+        currentPage = Math.max(
+            1,
+            Math.min(currentPage, totalPages)
+        );
+
+        card.dataset.currentPage =
+            String(currentPage);
 
         const start =
             (currentPage - 1) * ITEMS_PER_PAGE;
@@ -530,22 +590,385 @@
                     : "none";
         });
 
-        card.querySelector(".page-indicator")
-            .textContent =
+        const indicator =
+            card.querySelector(".page-indicator");
+
+        const previousButton =
+            card.querySelector(".previous");
+
+        const nextButton =
+            card.querySelector(".next");
+
+        indicator.textContent =
             currentPage + " / " + totalPages;
 
-        card.querySelector(".previous")
-            .disabled =
+        previousButton.disabled =
             currentPage === 1;
 
-        card.querySelector(".next")
-            .disabled =
+        nextButton.disabled =
             currentPage === totalPages;
+
+        updateEmptyMessages();
+    }
+
+    function initializeDragAndDrop() {
+        if (searching) {
+            document.body.classList.add(
+                "drag-disabled"
+            );
+
+            return;
+        }
+
+        initializeCategoryDragging();
+        initializeArchiveDragging();
+    }
+
+    function initializeCategoryDragging() {
+        document.querySelectorAll(
+            ".category-drag-handle"
+        ).forEach(handle => {
+
+            handle.addEventListener(
+                "dragstart",
+                event => {
+                    draggedCard =
+                        handle.closest(".card");
+
+                    draggedCard.classList.add(
+                        "dragging"
+                    );
+
+                    event.dataTransfer.effectAllowed =
+                        "move";
+
+                    event.dataTransfer.setData(
+                        "text/plain",
+                        draggedCard.dataset.categoryId
+                    );
+                }
+            );
+
+            handle.addEventListener(
+                "dragend",
+                async () => {
+                    if (!draggedCard) {
+                        return;
+                    }
+
+                    draggedCard.classList.remove(
+                        "dragging"
+                    );
+
+                    draggedCard = null;
+
+                    keepDefaultCategoryLast();
+
+                    await saveLayout();
+                }
+            );
+        });
+
+        cardContainer.addEventListener("dragover", event => {
+            if (!draggedCard) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const cards = Array.from(
+                cardContainer.querySelectorAll(
+                    ".card:not(.dragging)"
+                )
+            );
+
+            const targetCard = cards.find(card => {
+                const rect = card.getBoundingClientRect();
+
+                const isSameRow =
+                    event.clientY >= rect.top
+                    && event.clientY <= rect.bottom;
+
+                if (isSameRow) {
+                    return event.clientX
+                        < rect.left + rect.width / 2;
+                }
+
+                return event.clientY
+                    < rect.top + rect.height / 2;
+            });
+
+            if (targetCard) {
+                cardContainer.insertBefore(
+                    draggedCard,
+                    targetCard
+                );
+            } else {
+                cardContainer.appendChild(
+                    draggedCard
+                );
+            }
+
+            keepDefaultCategoryLast();
+        });
+    }
+
+    function initializeArchiveDragging() {
+        document.querySelectorAll(
+            ".archive-drag-handle"
+        ).forEach(handle => {
+
+            handle.addEventListener(
+                "dragstart",
+                event => {
+                    draggedArchive =
+                        handle.closest(".archive-item");
+
+                    draggedArchive.classList.add(
+                        "dragging"
+                    );
+
+                    enterArchiveDragMode();
+
+                    event.dataTransfer.effectAllowed =
+                        "move";
+
+                    event.dataTransfer.setData(
+                        "text/plain",
+                        draggedArchive.dataset.archiveId
+                    );
+                }
+            );
+
+            handle.addEventListener(
+                "dragend",
+                async () => {
+                    if (!draggedArchive) {
+                        return;
+                    }
+
+                    draggedArchive.classList.remove(
+                        "dragging"
+                    );
+
+                    draggedArchive = null;
+
+                    document.body.classList.remove(
+                        "archive-drag-mode"
+                    );
+
+                    updateEmptyMessages();
+
+                    await saveLayout();
+                }
+            );
+        });
+
+        document.querySelectorAll(
+            ".archive-list"
+        ).forEach(list => {
+
+            list.addEventListener(
+                "dragover",
+                event => {
+                    if (!draggedArchive) {
+                        return;
+                    }
+
+                    event.preventDefault();
+
+                    const afterElement =
+                        getArchiveAfterElement(
+                            list,
+                            event.clientY
+                        );
+
+                    if (afterElement == null) {
+                        list.appendChild(
+                            draggedArchive
+                        );
+                    } else {
+                        list.insertBefore(
+                            draggedArchive,
+                            afterElement
+                        );
+                    }
+
+                    updateEmptyMessages();
+                }
+            );
+        });
+    }
+
+    function getArchiveAfterElement(
+        container,
+        mouseY
+    ) {
+        const elements =
+            Array.from(
+                container.querySelectorAll(
+                    ".archive-item:not(.dragging)"
+                )
+            );
+
+        return elements.reduce(
+            (closest, element) => {
+                const box =
+                    element.getBoundingClientRect();
+
+                const offset =
+                    mouseY
+                    - box.top
+                    - box.height / 2;
+
+                if (
+                    offset < 0
+                    && offset > closest.offset
+                ) {
+                    return {
+                        offset,
+                        element
+                    };
+                }
+
+                return closest;
+            },
+            {
+                offset: Number.NEGATIVE_INFINITY,
+                element: null
+            }
+        ).element;
+    }
+
+    function enterArchiveDragMode() {
+        document.body.classList.add(
+            "archive-drag-mode"
+        );
+
+        document.querySelectorAll(
+            ".archive-item"
+        ).forEach(item => {
+            item.style.display = "flex";
+        });
+    }
+
+    function keepDefaultCategoryLast() {
+        const defaultCard =
+            cardContainer.querySelector(
+                '[data-default-category="true"]'
+            );
+
+        if (defaultCard) {
+            cardContainer.appendChild(
+                defaultCard
+            );
+        }
+    }
+
+    function updateEmptyMessages() {
+        document.querySelectorAll(".card")
+            .forEach(card => {
+                const archiveCount =
+                    card.querySelectorAll(
+                        ".archive-item"
+                    ).length;
+
+                const emptyMessage =
+                    card.querySelector(
+                        ".empty-archive-message"
+                    );
+
+                if (emptyMessage) {
+                    emptyMessage.style.display =
+                        archiveCount > 0
+                            ? "none"
+                            : "block";
+                }
+            });
+    }
+
+    function collectLayout() {
+        const cards =
+            Array.from(
+                document.querySelectorAll(".card")
+            );
+
+        return {
+            categoryIds:
+                cards.map(card =>
+                    Number(
+                        card.dataset.categoryId
+                    )
+                ),
+
+            archiveGroups:
+                cards.map(card => {
+                    const archiveIds =
+                        Array.from(
+                            card.querySelectorAll(
+                                ".archive-item"
+                            )
+                        ).map(item =>
+                            Number(
+                                item.dataset.archiveId
+                            )
+                        );
+
+                    return {
+                        categoryId:
+                            Number(
+                                card.dataset.categoryId
+                            ),
+                        archiveIds
+                    };
+                })
+        };
+    }
+
+    async function saveLayout() {
+        try {
+            const response = await fetch(
+                "/layout/reorder",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify(
+                        collectLayout()
+                    )
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    "정렬 저장 실패"
+                );
+            }
+
+            window.location.reload();
+
+        } catch (error) {
+            console.error(error);
+
+            alert(
+                "순서를 저장하지 못했습니다."
+            );
+
+            window.location.reload();
+        }
     }
 
     document.addEventListener(
         "DOMContentLoaded",
-        initializeCardPagination
+        () => {
+            initializeCardPagination();
+            initializeDragAndDrop();
+            updateEmptyMessages();
+        }
     );
 </script>
 
