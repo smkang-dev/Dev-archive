@@ -15,7 +15,7 @@
             th:href="@{/css/style.css}">
 </head>
 
-<body th:data-searching="${searching}">
+<body th:data-searching="${searching}" th:data-editing="${editing}" th:data-revision="${revision}">
 
 <header>
     <h1>📚 Dev Archive</h1>
@@ -23,6 +23,8 @@
 </header>
 
 <main>
+    <p><a th:if="${!editing}" href="/?edit=true">순서 편집</a><a th:if="${editing}" href="/">순서 편집 종료</a></p>
+    <p th:if="${editing}">드래그하면 순서가 저장됩니다. 이 모드는 자료 500개 이하에서 지원합니다.</p>
 
     <!-- 검색 및 카테고리 추가 -->
 
@@ -35,7 +37,7 @@
 
             <input
                     type="search"
-                    name="keyword"
+                    name="keyword" maxlength="200"
                     th:value="${keyword}"
                     placeholder="제목, URL, 메모 검색..."
                     autocomplete="off">
@@ -85,6 +87,7 @@
             class="category-form"
             th:action="@{/categories}"
             method="post">
+        <input type="hidden" name="expectedRevision" th:value="${revision}">
 
         <input
                 type="text"
@@ -118,7 +121,7 @@
                         archivesByCategory[category.id] != null
                         and !archivesByCategory[category.id].isEmpty()
                     )}"
-                th:data-category-id="${category.id}"
+                th:data-category-id="${category.id}" th:data-current-page="${currentPages[category.id]}" th:data-total-pages="${totalPages[category.id]}"
                 th:data-default-category="${category.defaultCategory}">
 
             <!-- 카드 상단 -->
@@ -131,7 +134,7 @@
                             th:if="${!category.defaultCategory}"
                             class="drag-handle category-drag-handle"
                             type="button"
-                            th:attr="draggable=${!searching}"
+                            th:attr="draggable=${editing}"
                             title="카테고리 순서 변경"
                             aria-label="카테고리 순서 변경">
                         ⋮⋮
@@ -153,7 +156,7 @@
                     <button
                             class="archive-add-button"
                             type="button"
-                            th:data-category-id="${category.id}"
+                            th:data-category-id="${category.id}" th:data-current-page="${currentPages[category.id]}" th:data-total-pages="${totalPages[category.id]}"
                             th:data-category-name="${category.name}"
                             onclick="openArchiveCreateModal(this)"
                             aria-label="자료 추가">
@@ -167,6 +170,7 @@
                             onsubmit="return confirm(
                                 '카테고리를 삭제할까요?\n저장된 자료는 기타로 이동합니다.'
                             );">
+        <input type="hidden" name="expectedRevision" th:value="${revision}">
 
                         <button
                                 class="category-delete-button"
@@ -185,7 +189,7 @@
 
             <div
                     class="archive-list"
-                    th:data-category-id="${category.id}">
+                    th:data-category-id="${category.id}" th:data-current-page="${currentPages[category.id]}" th:data-total-pages="${totalPages[category.id]}">
 
                 <div
                         class="archive-item"
@@ -195,7 +199,7 @@
                     <button
                             class="drag-handle archive-drag-handle"
                             type="button"
-                            th:attr="draggable=${!searching}"
+                            th:attr="draggable=${editing}"
                             title="자료 순서 변경"
                             aria-label="자료 순서 변경">
                         ⋮⋮
@@ -236,7 +240,7 @@
                                 class="archive-action-button"
                                 type="button"
                                 th:data-archive-id="${archive.id}"
-                                th:data-category-id="${category.id}"
+                                th:data-category-id="${category.id}" th:data-current-page="${currentPages[category.id]}" th:data-total-pages="${totalPages[category.id]}"
                                 th:data-category-name="${category.name}"
                                 th:data-title="${archive.title}"
                                 th:data-url="${archive.url}"
@@ -251,6 +255,7 @@
                                 onsubmit="return confirm(
                                     '이 자료를 삭제할까요?'
                                 );">
+        <input type="hidden" name="expectedRevision" th:value="${revision}">
 
                             <button
                                     class="archive-action-button delete"
@@ -353,6 +358,7 @@
         <form
                 id="archive-form"
                 method="post">
+        <input type="hidden" name="expectedRevision" th:value="${revision}">
 
             <input
                     id="archive-category-id"
@@ -389,7 +395,7 @@
 
             <textarea
                     id="archive-memo"
-                    name="memo"
+                    name="memo" maxlength="10000"
                     rows="7"
                     placeholder="다시 볼 때 필요한 내용을 적어 두세요."></textarea>
 
@@ -417,6 +423,8 @@
 </div>
 
 <script>
+    const editing = document.body.dataset.editing === "true";
+    let savingLayout = false;
     const ITEMS_PER_PAGE = 4;
 
     const categoryForm =
@@ -522,12 +530,19 @@
     function initializeCardPagination() {
         document.querySelectorAll(".card")
             .forEach(card => {
-                card.dataset.currentPage = "1";
+                if (editing) card.dataset.currentPage = "1";
                 renderCardPage(card);
             });
     }
 
     function moveCardPage(button, direction) {
+        if (!editing) {
+            const card = button.closest(".card");
+            const url = new URL(window.location.href);
+            url.searchParams.set("p" + card.dataset.categoryId, String(Math.max(1, Math.min(Number(card.dataset.totalPages), Number(card.dataset.currentPage) + direction))));
+            window.location.assign(url);
+            return;
+        }
         const card =
             button.closest(".card");
 
@@ -556,6 +571,13 @@
     }
 
     function renderCardPage(card) {
+        if (!editing) {
+            const current = Number(card.dataset.currentPage), total = Number(card.dataset.totalPages);
+            card.querySelector(".page-indicator").textContent = current + " / " + total;
+            card.querySelector(".previous").disabled = current <= 1;
+            card.querySelector(".next").disabled = current >= total;
+            return;
+        }
         const items =
             Array.from(
                 card.querySelectorAll(".archive-item")
@@ -612,7 +634,7 @@
     }
 
     function initializeDragAndDrop() {
-        if (searching) {
+        if (!editing) {
             document.body.classList.add(
                 "drag-disabled"
             );
@@ -896,9 +918,7 @@
         return {
             categoryIds:
                 cards.map(card =>
-                    Number(
-                        card.dataset.categoryId
-                    )
+                    card.dataset.categoryId
                 ),
 
             archiveGroups:
@@ -909,16 +929,12 @@
                                 ".archive-item"
                             )
                         ).map(item =>
-                            Number(
-                                item.dataset.archiveId
-                            )
+                            item.dataset.archiveId
                         );
 
                     return {
                         categoryId:
-                            Number(
-                                card.dataset.categoryId
-                            ),
+                            card.dataset.categoryId,
                         archiveIds
                     };
                 })
@@ -926,6 +942,9 @@
     }
 
     async function saveLayout() {
+        if (savingLayout) return;
+        savingLayout = true;
+        document.body.style.pointerEvents = "none";
         try {
             const response = await fetch(
                 "/layout/reorder",
@@ -938,15 +957,14 @@
                     },
 
                     body: JSON.stringify(
-                        collectLayout()
+                        { ...collectLayout(), expectedRevision: document.body.dataset.revision }
                     )
                 }
             );
 
             if (!response.ok) {
-                throw new Error(
-                    "정렬 저장 실패"
-                );
+                const detail = await response.json().catch(() => ({}));
+                throw new Error(detail.message || "정렬 저장 실패");
             }
 
             window.location.reload();
@@ -955,7 +973,7 @@
             console.error(error);
 
             alert(
-                "순서를 저장하지 못했습니다."
+                error.message || "순서를 저장하지 못했습니다."
             );
 
             window.location.reload();

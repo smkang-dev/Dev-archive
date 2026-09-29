@@ -1,134 +1,76 @@
 package com.devarchive.controller;
 
-import com.devarchive.domain.Archive;
 import com.devarchive.service.ArchiveService;
+import com.devarchive.service.ArchiveViewService;
 import com.devarchive.service.CategoryService;
+import java.util.Map;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @Controller
 public class HomeController {
 
-    private final CategoryService categoryService;
-    private final ArchiveService archiveService;
+  private final CategoryService categoryService;
+  private final ArchiveService archiveService;
 
-    public HomeController(
-            CategoryService categoryService,
-            ArchiveService archiveService
-    ) {
-        this.categoryService = categoryService;
-        this.archiveService = archiveService;
-    }
+  private final ArchiveViewService viewService;
 
-    @GetMapping("/")
-    public String home(
-            @RequestParam(required = false) String keyword,
-            Model model
-    ) {
-        List<Archive> archives = archiveService.search(keyword);
+  public HomeController(
+      CategoryService categoryService,
+      ArchiveService archiveService,
+      ArchiveViewService viewService) {
+    this.categoryService = categoryService;
+    this.archiveService = archiveService;
+    this.viewService = viewService;
+  }
 
-        Map<Long, List<Archive>> archivesByCategory =
-                archives.stream()
-                        .collect(
-                                Collectors.groupingBy(
-                                        archive ->
-                                                archive.getCategory().getId()
-                                )
-                        );
+  @GetMapping("/")
+  public String home(@RequestParam Map<String, String> params, Model model) {
+    model.addAllAttributes(viewService.load(params));
+    return "index";
+  }
 
-        boolean searching =
-                keyword != null && !keyword.trim().isBlank();
+  @PostMapping("/categories")
+  public String createCategory(@RequestParam String name, @RequestParam Long expectedRevision) {
+    categoryService.create(name, expectedRevision);
+    return "redirect:/";
+  }
 
-        model.addAttribute(
-                "categories",
-                categoryService.findAll()
-        );
+  @PostMapping("/categories/{id}/delete")
+  public String deleteCategory(@PathVariable Long id, @RequestParam Long expectedRevision) {
+    categoryService.delete(id, expectedRevision);
+    return "redirect:/";
+  }
 
-        model.addAttribute(
-                "archivesByCategory",
-                archivesByCategory
-        );
+  @PostMapping("/archives")
+  public String createArchive(
+      @RequestParam Long categoryId,
+      @RequestParam String title,
+      @RequestParam String url,
+      @RequestParam(required = false) String memo,
+      @RequestParam Long expectedRevision) {
+    archiveService.create(categoryId, title, url, memo, expectedRevision);
 
-        model.addAttribute(
-                "keyword",
-                keyword == null ? "" : keyword.trim()
-        );
+    return "redirect:/";
+  }
 
-        model.addAttribute(
-                "searching",
-                searching
-        );
+  @PostMapping("/archives/{id}/update")
+  public String updateArchive(
+      @PathVariable Long id,
+      @RequestParam Long categoryId,
+      @RequestParam String title,
+      @RequestParam String url,
+      @RequestParam(required = false) String memo,
+      @RequestParam Long expectedRevision) {
+    archiveService.update(id, categoryId, title, url, memo, expectedRevision);
 
-        model.addAttribute(
-                "searchResultCount",
-                archives.size()
-        );
+    return "redirect:/";
+  }
 
-        return "index";
-    }
-
-    @PostMapping("/categories")
-    public String createCategory(
-            @RequestParam String name
-    ) {
-        categoryService.create(name);
-        return "redirect:/";
-    }
-
-    @PostMapping("/categories/{id}/delete")
-    public String deleteCategory(
-            @PathVariable Long id
-    ) {
-        categoryService.delete(id);
-        return "redirect:/";
-    }
-
-    @PostMapping("/archives")
-    public String createArchive(
-            @RequestParam Long categoryId,
-            @RequestParam String title,
-            @RequestParam String url,
-            @RequestParam(required = false) String memo
-    ) {
-        archiveService.create(
-                categoryId,
-                title,
-                url,
-                memo
-        );
-
-        return "redirect:/";
-    }
-
-    @PostMapping("/archives/{id}/update")
-    public String updateArchive(
-            @PathVariable Long id,
-            @RequestParam Long categoryId,
-            @RequestParam String title,
-            @RequestParam String url,
-            @RequestParam(required = false) String memo
-    ) {
-        archiveService.update(
-                id,
-                categoryId,
-                title,
-                url,
-                memo
-        );
-
-        return "redirect:/";
-    }
-
-    @PostMapping("/archives/{id}/delete")
-    public String deleteArchive(
-            @PathVariable Long id
-    ) {
-        archiveService.delete(id);
-        return "redirect:/";
-    }
+  @PostMapping("/archives/{id}/delete")
+  public String deleteArchive(@PathVariable Long id, @RequestParam Long expectedRevision) {
+    archiveService.delete(id, expectedRevision);
+    return "redirect:/";
+  }
 }
